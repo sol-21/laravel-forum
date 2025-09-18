@@ -2,7 +2,6 @@
 
 namespace TeamTeaTime\Forum\Http\Resources;
 
-use App\Http\Resources\VoteResource;
 use Illuminate\Http\Resources\Json\JsonResource;
 use TeamTeaTime\Forum\Support\Api\ForumApi;
 
