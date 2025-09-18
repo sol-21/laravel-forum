@@ -7,6 +7,7 @@ use TeamTeaTime\Forum\Http\Controllers\Api\{
     CategoryController,
     PostController,
     ThreadController,
+    VoteController
 };
 
 $authMiddleware = config('forum.api.router.auth_middleware', []);
@@ -30,9 +31,15 @@ Route::prefix('category')->name('category.')->group(function () use ($authMiddle
 
 // Threads
 Route::prefix('thread')->name('thread.')->group(function () use ($authMiddleware) {
+
+    if (config('forum.api.enable_search')) {
+        Route::post('search', [ThreadController::class, 'search'])->name('search');
+    }
+
     Route::get('recent', [ThreadController::class, 'recent'])->name('recent');
     Route::get('unread', [ThreadController::class, 'unread'])->name('unread');
     Route::patch('unread/mark-as-read', [ThreadController::class, 'markAsRead'])->name('unread.mark-as-read')->middleware($authMiddleware);
+
     Route::get('{thread}', [ThreadController::class, 'fetch'])->name('fetch');
 
     Route::middleware($authMiddleware)->group(function () {
@@ -44,6 +51,7 @@ Route::prefix('thread')->name('thread.')->group(function () use ($authMiddleware
         Route::post('{thread}/move', [ThreadController::class, 'move'])->name('move');
         Route::delete('{thread}', [ThreadController::class, 'delete'])->name('delete');
         Route::post('{thread}/restore', [ThreadController::class, 'restore'])->name('restore');
+        Route::patch('{thread}/mark-as-read', [ThreadController::class, 'readThread'])->name('mark-as-read');
     });
 
     // Posts by thread
@@ -91,4 +99,9 @@ Route::prefix('bulk')->name('bulk.')->middleware($authMiddleware)->group(functio
         Route::delete('/', [BulkPostController::class, 'delete'])->name('delete');
         Route::post('restore', [BulkPostController::class, 'restore'])->name('restore');
     });
+});
+
+// Votes
+Route::prefix('votes')->group(function () use ($authMiddleware) {
+    Route::post('/', [VoteController::class, 'store'])->name('vote.store')->middleware($authMiddleware);
 });

@@ -54,6 +54,7 @@ return [
         'category' => TeamTeaTime\Forum\Http\Resources\CategoryResource::class,
         'thread' => TeamTeaTime\Forum\Http\Resources\ThreadResource::class,
         'post' => TeamTeaTime\Forum\Http\Resources\PostResource::class,
+        'vote' => TeamTeaTime\Forum\Http\Resources\VoteResource::class,
     ],
 
 ];

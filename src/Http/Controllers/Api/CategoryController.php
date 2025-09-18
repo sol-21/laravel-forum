@@ -12,28 +12,27 @@ use TeamTeaTime\Forum\Http\Requests\EditCategory;
 use TeamTeaTime\Forum\Http\Resources\CategoryResource;
 use TeamTeaTime\Forum\Support\Access\CategoryAccess;
 
-class CategoryController extends BaseController
-{
+class CategoryController extends BaseController {
     protected $resourceClass = null;
 
-    public function __construct()
-    {
+    public function __construct() {
         $this->resourceClass = config('forum.api.resources.category', CategoryResource::class);
     }
 
-    public function index(Request $request): AnonymousResourceCollection
-    {
+    public function index(Request $request): AnonymousResourceCollection {
         if ($request->has('parent_id')) {
             $categories = CategoryAccess::getFilteredDescendantsFor($request->user(), $request->query('parent_id'));
         } else {
             $categories = CategoryAccess::getFilteredTreeFor($request->user());
         }
 
+        // Order categories by latest created_at
+        $categories = $categories->sortByDesc('created_at');
+
         return $this->resourceClass::collection($categories);
     }
 
-    public function fetch(Request $request): JsonResource|Response
-    {
+    public function fetch(Request $request): JsonResource|Response {
         $category = $request->route('category');
         if (!$category->isAccessibleTo($request->user())) {
             return $this->notFoundResponse();
@@ -42,22 +41,19 @@ class CategoryController extends BaseController
         return new $this->resourceClass($category);
     }
 
-    public function store(CreateCategory $request): JsonResource
-    {
+    public function store(CreateCategory $request): JsonResource {
         $category = $request->fulfill();
 
         return new $this->resourceClass($category);
     }
 
-    public function update(EditCategory $request): JsonResource
-    {
+    public function update(EditCategory $request): JsonResource {
         $category = $request->fulfill();
 
         return new $this->resourceClass($category);
     }
 
-    public function delete(DeleteCategory $request): Response
-    {
+    public function delete(DeleteCategory $request): Response {
         $request->fulfill();
 
         return new Response(['success' => true], 200);

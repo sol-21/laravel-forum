@@ -5,14 +5,12 @@ namespace TeamTeaTime\Forum\Http\Resources;
 use Illuminate\Http\Resources\Json\JsonResource;
 use TeamTeaTime\Forum\Support\Api\ForumApi;
 
-class CategoryResource extends JsonResource
-{
+class CategoryResource extends JsonResource {
     /**
      * @param  \Illuminate\Http\Request  $request
      * @return array
      */
-    public function toArray($request)
-    {
+    public function toArray($request) {
         return [
             'id' => $this->id,
             'title' => $this->title,
@@ -41,8 +39,7 @@ class CategoryResource extends JsonResource
      * @param  \Illuminate\Http\Request  $request
      * @return array
      */
-    public function with($request)
-    {
+    public function with($request) {
         $links = [
             'self' => ForumApi::route('category.fetch', ['category' => $this->id]),
         ];

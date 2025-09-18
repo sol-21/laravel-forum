@@ -9,20 +9,16 @@ use TeamTeaTime\Forum\{
     Support\Authorization\ThreadAuthorization,
 };
 
-class RestoreThread extends FormRequest implements FulfillableRequestInterface
-{
-    public function authorize(): bool
-    {
+class RestoreThread extends FormRequest implements FulfillableRequestInterface {
+    public function authorize(): bool {
         return ThreadAuthorization::restore($this->user(), $this->route('thread'));
     }
 
-    public function rules(): array
-    {
+    public function rules(): array {
         return [];
     }
 
-    public function fulfill()
-    {
+    public function fulfill() {
         $action = new Action($this->route('thread'));
         $thread = $action->execute();
 

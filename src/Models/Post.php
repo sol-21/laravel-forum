@@ -10,8 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use TeamTeaTime\Forum\Models\Traits\HasAuthor;
 use TeamTeaTime\Forum\Support\Frontend\Forum;
 
-class Post extends BaseModel
-{
+class Post extends BaseModel {
     use SoftDeletes;
     use HasAuthor;
 
@@ -26,44 +25,48 @@ class Post extends BaseModel
     ];
     protected $appends = ['route'];
 
-    public function __construct(array $attributes = [])
-    {
+    public function __construct(array $attributes = []) {
         parent::__construct($attributes);
         $this->perPage = config('forum.general.pagination.posts');
     }
 
-    public function thread(): BelongsTo
-    {
+    public function thread(): BelongsTo {
         return $this->belongsTo(Thread::class)->withTrashed();
     }
 
-    public function parent(): BelongsTo
-    {
+    public function parent(): BelongsTo {
         return $this->belongsTo(Post::class, 'post_id');
     }
 
-    public function children(): HasMany
-    {
+    public function children(): HasMany {
         return $this->hasMany(Post::class, 'post_id')->withTrashed();
     }
 
-    public function scopeRecent(Builder $query): Builder
-    {
+    public function scopeRecent(Builder $query): Builder {
         $age = strtotime(config('forum.general.old_thread_threshold'), 0);
         $cutoff = time() - $age;
 
         return $query->where('updated_at', '>', date('Y-m-d H:i:s', $cutoff))->orderBy('updated_at', 'desc');
     }
 
-    public function getPage(): int
-    {
+    public function getPage(): int {
         return ceil($this->sequence / $this->getPerPage());
     }
 
-    protected function route(): Attribute
-    {
+    protected function route(): Attribute {
         return new Attribute(
             get: fn() => Forum::route('thread.show', $this),
         );
+    }
+
+    public function votes(): HasMany {
+        return $this->hasMany(Vote::class);
+    }
+    public function upvotes() {
+        return $this->votes()->where('type', 'upvote');
+    }
+
+    public function downvotes() {
+        return $this->votes()->where('type', 'downvote');
     }
 }

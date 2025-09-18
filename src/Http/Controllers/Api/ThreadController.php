@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use TeamTeaTime\Forum\Http\Requests\CreateThread;
 use TeamTeaTime\Forum\Http\Requests\DeleteThread;
 use TeamTeaTime\Forum\Http\Requests\LockThread;
@@ -20,17 +22,14 @@ use TeamTeaTime\Forum\Http\Requests\UnpinThread;
 use TeamTeaTime\Forum\Http\Resources\ThreadResource;
 use TeamTeaTime\Forum\Models\Thread;
 
-class ThreadController extends BaseController
-{
+class ThreadController extends BaseController {
     protected $resourceClass = null;
 
-    public function __construct()
-    {
+    public function __construct() {
         $this->resourceClass = config('forum.api.resources.thread', ThreadResource::class);
     }
 
-    public function recent(Request $request, bool $unreadOnly = false): AnonymousResourceCollection
-    {
+    public function recent(Request $request, bool $unreadOnly = false): AnonymousResourceCollection {
         $threads = Thread::recent()
             ->get()
             ->filter(function ($thread) use ($request, $unreadOnly) {
@@ -46,26 +45,24 @@ class ThreadController extends BaseController
         return $this->resourceClass::collection($threads);
     }
 
-    public function unread(Request $request): AnonymousResourceCollection
-    {
+    public function unread(Request $request): AnonymousResourceCollection {
         return $this->recent($request, true);
     }
 
-    public function markAsRead(MarkThreadsAsRead $request): Response
-    {
+    public function markAsRead(MarkThreadsAsRead $request): Response {
         $category = $request->fulfill();
 
         return new Response(['success' => true]);
     }
 
-    public function indexByCategory(Request $request): AnonymousResourceCollection|Response
-    {
+    public function indexByCategory(Request $request): AnonymousResourceCollection|Response {
         $category = $request->route('category');
         if (!$category->isAccessibleTo($request->user())) {
             return $this->notFoundResponse();
         }
 
-        $query = Thread::orderBy('created_at')->where('category_id', $category->id);
+        $query = Thread::where('category_id', $category->id)
+            ->orderBy('created_at', 'desc');
 
         $createdAfter = $request->query('created_after');
         $createdBefore = $request->query('created_before');
@@ -96,15 +93,13 @@ class ThreadController extends BaseController
         return $this->resourceClass::collection($threads);
     }
 
-    public function store(CreateThread $request): JsonResource
-    {
+    public function store(CreateThread $request): JsonResource {
         $thread = $request->fulfill();
 
         return new $this->resourceClass($thread);
     }
 
-    public function fetch(Request $request): JsonResource|Response
-    {
+    public function fetch(Request $request): JsonResource|Response {
         $thread = $request->route('thread');
         if (!$thread->category->isAccessibleTo($request->user())) {
             return $this->notFoundResponse();
@@ -117,8 +112,7 @@ class ThreadController extends BaseController
         return new $this->resourceClass($thread);
     }
 
-    public function lock(LockThread $request): JsonResource|Response
-    {
+    public function lock(LockThread $request): JsonResource|Response {
         $thread = $request->fulfill();
 
         if ($thread === null) {
@@ -128,8 +122,7 @@ class ThreadController extends BaseController
         return new $this->resourceClass($thread);
     }
 
-    public function unlock(UnlockThread $request): JsonResource|Response
-    {
+    public function unlock(UnlockThread $request): JsonResource|Response {
         $thread = $request->fulfill();
 
         if ($thread === null) {
@@ -139,8 +132,7 @@ class ThreadController extends BaseController
         return new $this->resourceClass($thread);
     }
 
-    public function pin(PinThread $request): JsonResource|Response
-    {
+    public function pin(PinThread $request): JsonResource|Response {
         $thread = $request->fulfill();
 
         if ($thread === null) {
@@ -150,8 +142,7 @@ class ThreadController extends BaseController
         return new $this->resourceClass($thread);
     }
 
-    public function unpin(UnpinThread $request): JsonResource|Response
-    {
+    public function unpin(UnpinThread $request): JsonResource|Response {
         $thread = $request->fulfill();
 
         if ($thread === null) {
@@ -161,15 +152,13 @@ class ThreadController extends BaseController
         return new $this->resourceClass($thread);
     }
 
-    public function rename(RenameThread $request): JsonResource
-    {
+    public function rename(RenameThread $request): JsonResource {
         $thread = $request->fulfill();
 
         return new $this->resourceClass($thread);
     }
 
-    public function move(MoveThread $request): JsonResource|Response
-    {
+    public function move(MoveThread $request): JsonResource|Response {
         $thread = $request->fulfill();
 
         if ($thread === null) {
@@ -179,8 +168,7 @@ class ThreadController extends BaseController
         return new $this->resourceClass($thread);
     }
 
-    public function delete(DeleteThread $request): JsonResource|Response
-    {
+    public function delete(DeleteThread $request): JsonResource|Response {
         $thread = $request->fulfill();
 
         if ($thread === null) {
@@ -190,8 +178,7 @@ class ThreadController extends BaseController
         return new $this->resourceClass($thread);
     }
 
-    public function restore(RestoreThread $request): JsonResource|Response
-    {
+    public function restore(RestoreThread $request): JsonResource|Response {
         $thread = $request->fulfill();
 
         if ($thread === null) {
@@ -199,5 +186,43 @@ class ThreadController extends BaseController
         }
 
         return new $this->resourceClass($thread);
+    }
+
+    public function readThread(Request $request): JsonResource|Response {
+        $request->validate([
+            'thread_id' => ['required', 'integer', 'exists:forum_threads,id'],
+        ]);
+
+        $user = Auth::user();
+        $thread = \TeamTeaTime\Forum\Models\Thread::findOrFail($request->input('thread_id'));
+
+        if ($thread === null) {
+            return $this->invalidSelectionResponse();
+        }
+
+
+        // upsert a read row
+        DB::table('forum_threads_read')->updateOrInsert(
+            ['thread_id' => $thread->id, 'user_id' => $user->id],
+            ['updated_at' => now(), 'created_at' => now()]
+        );
+
+        return new $this->resourceClass($thread);
+    }
+
+    public function search(Request $request): AnonymousResourceCollection|Response {
+        $term = $request->input('term');
+
+        if (empty($term)) {
+            return $this->invalidSelectionResponse();
+        }
+
+        $threadsQuery = \TeamTeaTime\Forum\Models\Thread::query();
+
+        $threadsQuery->where('title', 'ILIKE', "%$term%");
+
+        $threads = $threadsQuery->limit(10)->get();
+
+        return $this->resourceClass::collection($threads);
     }
 }
