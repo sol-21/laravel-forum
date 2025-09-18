@@ -2,16 +2,16 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
-class AddSequenceToPostsTable extends Migration
-{
+
+class AddSequenceToPostsTable extends Migration {
     /**
      * Run the migrations.
      *
      * @return void
      */
-    public function up()
-    {
+    public function up() {
         Schema::table('forum_posts', function (Blueprint $table) {
             $table->integer('sequence')->after('post_id')->unsigned()->default(0);
         });
@@ -22,8 +22,7 @@ class AddSequenceToPostsTable extends Migration
      *
      * @return void
      */
-    public function down()
-    {
+    public function down() {
         Schema::table('forum_posts', function (Blueprint $table) {
             $table->dropColumn('sequence');
         });

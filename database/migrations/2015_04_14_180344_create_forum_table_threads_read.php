@@ -2,16 +2,16 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
-class CreateForumTableThreadsRead extends Migration
-{
+
+class CreateForumTableThreadsRead extends Migration {
     /**
      * Run the migrations.
      *
      * @return void
      */
-    public function up()
-    {
+    public function up() {
         Schema::create('forum_threads_read', function (Blueprint $table) {
             $table->integer('thread_id')->unsigned();
             $table->foreignIdFor(config('forum.integration.user_model'), 'user_id');
@@ -24,8 +24,7 @@ class CreateForumTableThreadsRead extends Migration
      *
      * @return void
      */
-    public function down()
-    {
+    public function down() {
         Schema::drop('forum_threads_read');
     }
 }
