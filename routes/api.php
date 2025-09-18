@@ -11,26 +11,27 @@ use TeamTeaTime\Forum\Http\Controllers\Api\{
 };
 
 $authMiddleware = config('forum.api.router.auth_middleware', []);
+$moderatorMiddleware = config('forum.api.router.moderator_middleware', []);
 
 // Categories
-Route::prefix('category')->name('category.')->group(function () use ($authMiddleware) {
+Route::prefix('category')->name('category.')->group(function () use ($moderatorMiddleware) {
 
     Route::get('/', [CategoryController::class, 'index'])->name('index');
     Route::get('{category}', [CategoryController::class, 'fetch'])->name('fetch');
 
-    Route::middleware($authMiddleware)->group(function () {
+    Route::middleware([$moderatorMiddleware])->group(function () {
         Route::post('/', [CategoryController::class, 'store'])->name('store');
         Route::patch('{category}', [CategoryController::class, 'update'])->name('update');
         Route::delete('{category}', [CategoryController::class, 'delete'])->name('delete');
+        Route::post('{category}/thread', [ThreadController::class, 'store'])->name('threads.store');
     });
 
     // Threads by category
     Route::get('{category}/thread', [ThreadController::class, 'indexByCategory'])->name('threads.indexByCategory');
-    Route::post('{category}/thread', [ThreadController::class, 'store'])->name('threads.store')->middleware($authMiddleware);
 });
 
 // Threads
-Route::prefix('thread')->name('thread.')->group(function () use ($authMiddleware) {
+Route::prefix('thread')->name('thread.')->group(function () use ($authMiddleware, $moderatorMiddleware) {
 
     if (config('forum.api.enable_search')) {
         Route::post('search', [ThreadController::class, 'search'])->name('search');
@@ -42,7 +43,7 @@ Route::prefix('thread')->name('thread.')->group(function () use ($authMiddleware
 
     Route::get('{thread}', [ThreadController::class, 'fetch'])->name('fetch');
 
-    Route::middleware($authMiddleware)->group(function () {
+    Route::middleware([$moderatorMiddleware])->group(function () {
         Route::post('{thread}/lock', [ThreadController::class, 'lock'])->name('lock');
         Route::post('{thread}/unlock', [ThreadController::class, 'unlock'])->name('unlock');
         Route::post('{thread}/pin', [ThreadController::class, 'pin'])->name('pin');
@@ -51,8 +52,8 @@ Route::prefix('thread')->name('thread.')->group(function () use ($authMiddleware
         Route::post('{thread}/move', [ThreadController::class, 'move'])->name('move');
         Route::delete('{thread}', [ThreadController::class, 'delete'])->name('delete');
         Route::post('{thread}/restore', [ThreadController::class, 'restore'])->name('restore');
-        Route::patch('{thread}/mark-as-read', [ThreadController::class, 'readThread'])->name('mark-as-read');
     });
+    Route::patch('{thread}/mark-as-read', [ThreadController::class, 'readThread'])->name('mark-as-read')->middleware($authMiddleware);
 
     // Posts by thread
     Route::get('{thread}/posts', [PostController::class, 'indexByThread'])->name('posts');
