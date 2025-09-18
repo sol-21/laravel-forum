@@ -19,7 +19,7 @@ Route::prefix('category')->name('category.')->group(function () use ($moderatorM
     Route::get('/', [CategoryController::class, 'index'])->name('index');
     Route::get('{category}', [CategoryController::class, 'fetch'])->name('fetch');
 
-    Route::middleware([$moderatorMiddleware])->group(function () {
+    Route::middleware($moderatorMiddleware)->group(function () {
         Route::post('/', [CategoryController::class, 'store'])->name('store');
         Route::patch('{category}', [CategoryController::class, 'update'])->name('update');
         Route::delete('{category}', [CategoryController::class, 'delete'])->name('delete');
@@ -43,7 +43,7 @@ Route::prefix('thread')->name('thread.')->group(function () use ($authMiddleware
 
     Route::get('{thread}', [ThreadController::class, 'fetch'])->name('fetch');
 
-    Route::middleware([$moderatorMiddleware])->group(function () {
+    Route::middleware($moderatorMiddleware)->group(function () {
         Route::post('{thread}/lock', [ThreadController::class, 'lock'])->name('lock');
         Route::post('{thread}/unlock', [ThreadController::class, 'unlock'])->name('unlock');
         Route::post('{thread}/pin', [ThreadController::class, 'pin'])->name('pin');
