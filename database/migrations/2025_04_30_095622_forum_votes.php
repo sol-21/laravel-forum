@@ -11,7 +11,9 @@ return new class extends Migration {
     public function up(): void {
         Schema::create('forum_votes', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('post_id')->constrained('forum_posts')->onUpdate('cascade')->onDelete('restrict');
+            $table->unsignedInteger('post_id');
+
+            $table->foreign('post_id')->references('id')->on('forum_posts')->onUpdate('cascade')->onDelete('cascade');
             $table->foreignId('user_id')->constrained()->onUpdate('cascade')->onDelete('restrict');
             $table->enum('type', ['upvote', 'downvote']);
             $table->integer('upvote_count')->default(0);
