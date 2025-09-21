@@ -219,7 +219,7 @@ class ThreadController extends BaseController {
 
         $threadsQuery = \TeamTeaTime\Forum\Models\Thread::query();
 
-        $threadsQuery->where('title', 'ILIKE', "%$term%");
+        $threadsQuery->where('title', 'LIKE', "%$term%");
 
         $threads = $threadsQuery->limit(10)->get();
 
