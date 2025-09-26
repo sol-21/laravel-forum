@@ -40,6 +40,8 @@ return [
         'middleware' => ['api', 'auth:api'],
         'auth_middleware' => ['auth:api'],
         'moderator_middleware' => ['auth:api', 'role:moderator'],
+        'alumni_middleware' => ['auth:api', 'role:alumni'],
+        'alumni_or_moderator_middleware' => ['auth:api', 'role:alumni|moderator'],
     ],
 
     /*

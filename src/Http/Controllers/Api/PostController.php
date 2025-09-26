@@ -42,12 +42,32 @@ class PostController extends BaseController {
                 'downvotes.user'
             ])
             ->orderByDesc('created_at')
-            ->paginate();
+            ->paginate(5);
 
-        return response()->json([
-            'thread' => new \TeamTeaTime\Forum\Http\Resources\ThreadResource($thread),
-            'posts' => $this->resourceClass::collection($posts),
-        ]);
+        return $this->resourceClass::collection($posts);
+    }
+
+    public function indexByPost(Request $request): AnonymousResourceCollection|JsonResponse|Response {
+        $post = $request->route('post');
+        if (!$post->thread->category->isAccessibleTo($request->user())) {
+            return $this->notFoundResponse();
+        }
+
+        if ($post->thread->category->is_private) {
+            $this->authorize('view', $post->thread);
+        }
+
+        // Only return posts with the given post as parent and eager load votes, upvotes, downvotes, and their users
+        $posts = Post::where('post_id', $post->id)
+            ->with([
+                'votes.user',
+                'upvotes.user',
+                'downvotes.user'
+            ])
+            ->orderByDesc('created_at')
+            ->paginate(5);
+
+        return $this->resourceClass::collection($posts);
     }
 
     public function search(SearchPosts $request): AnonymousResourceCollection {
@@ -87,22 +107,10 @@ class PostController extends BaseController {
         }
 
         // Eager load only non-trashed children and votes, upvotes, downvotes, and their users
-        $post->load([
-            'children' => function ($query) {
-                $query->whereNull('deleted_at')
-                    ->with([
-                        'votes.user',
-                        'upvotes.user',
-                        'downvotes.user'
-                    ]);
-            },
-            'votes.user',
-            'upvotes.user',
-            'downvotes.user'
-        ]);
-
         return new $this->resourceClass($post);
     }
+
+
 
     public function store(CreatePost $request): JsonResource {
         $post = $request->fulfill();

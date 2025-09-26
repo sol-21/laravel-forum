@@ -14,7 +14,7 @@ return new class extends Migration {
             $table->unsignedInteger('post_id');
 
             $table->foreign('post_id')->references('id')->on('forum_posts')->onUpdate('cascade')->onDelete('cascade');
-            $table->foreignId('user_id')->constrained()->onUpdate('cascade')->onDelete('restrict');
+            $table->foreignId('user_id')->constrained()->onUpdate('cascade')->onDelete('cascade');
             $table->enum('type', ['upvote', 'downvote']);
             $table->integer('upvote_count')->default(0);
             $table->integer('downvote_count')->default(0);
